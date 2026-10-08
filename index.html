@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Hexaxial - Derivações Periféricas (Plano Frontal)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        ecg: {
+                            bg: '#0f172a', // slate-900
+                            card: '#1e293b', // slate-800
+                            grid: '#334155', // slate-700
+                            text: '#cbd5e1', // slate-300
+                            highlight: '#38bdf8', // sky-400
+                            accent: '#60a5fa', // blue-400
+                            vector: '#93c5fd', // blue-300
+                            wave: '#e2e8f0', // slate-200
+                            isoelectric: '#64748b', // slate-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #cbd5e1;
+        }
+        
+        .ecg-grid {
+            background-image: 
+                linear-gradient(rgba(51, 65, 85, 0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(51, 65, 85, 0.4) 1px, transparent 1px),
+                linear-gradient(rgba(51, 65, 85, 0.8) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(51, 65, 85, 0.8) 1px, transparent 1px);
+            background-size: 10px 10px, 10px 10px, 50px 50px, 50px 50px;
+            background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+        }
+
+        .lead-button {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .lead-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .lead-button.active {
+            background-color: #1e3a8a; /* blue-900 */
+            border-color: #38bdf8; /* sky-400 */
+            color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        /* SVG Path animations for the ECG wave */
+        .draw-wave {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: draw 2s forwards ease-out;
+        }
+
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans overflow-x-hidden">
+
+    <header class="bg-ecg-card border-b border-ecg-grid p-4 text-center">
+        <h1 class="text-2xl font-bold text-ecg-highlight tracking-wide">Sistema Hexaxial - Plano Frontal</h1>
+        <p class="text-sm text-ecg-text mt-1">Derivações Periféricas: D1, D2, D3, aVR, aVL, aVF</p>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Left Panel: Interactive Hexaxial System (Coronal Plane) -->
+        <section class="lg:w-1/2 flex flex-col gap-4">
+            <div class="bg-ecg-card rounded-xl border border-ecg-grid p-6 flex flex-col items-center justify-center relative aspect-square shadow-lg overflow-hidden">
+                <h2 class="absolute top-4 left-4 text-xs font-mono text-ecg-isoelectric uppercase tracking-wider">Corte Coronal Torácico</h2>
+                
+                <!-- The Hexaxial Diagram Container -->
+                <div id="hexaxial-container" class="relative w-full max-w-[400px] aspect-square flex items-center justify-center">
+                    
+                    <!-- Base Circle -->
+                    <div class="absolute inset-0 rounded-full border-2 border-ecg-grid opacity-30"></div>
+                    <div class="absolute inset-[10%] rounded-full border border-ecg-grid border-dashed opacity-20"></div>
+                    
+                    <!-- Center Point (AV Node conceptually) -->
+                    <div class="absolute w-2 h-2 bg-ecg-isoelectric rounded-full z-10"></div>
+
+                    <!-- Heart Graphic (Stylized) -->
+                    <svg class="absolute w-1/3 h-1/3 opacity-40 text-ecg-isoelectric" viewBox="0 0 100 100" style="transform: translate(-10%, -10%);">
+                        <path d="M50 80 C 10 50, 20 20, 50 40 C 80 20, 90 50, 50 80 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <!-- Septum line -->
+                        <line x1="50" y1="40" x2="40" y2="75" stroke="currentColor" stroke-width="1" stroke-dasharray="2,2"/>
+                        <text x="35" y="55" class="text-[8px] fill-current" font-family="monospace">VD</text>
+                        <text x="55" y="55" class="text-[8px] fill-current" font-family="monospace">VE</text>
+                    </svg>
+
+                    <!-- Main Electrical Vector of the Heart (Typically ~ +60 degrees, D2) -->
+                    <svg class="absolute inset-0 w-full h-full z-10 pointer-events-none" viewBox="0 0 200 200">
+                        <defs>
+                            <marker id="arrowhead-main" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <polygon points="0 0, 6 3, 0 6" fill="#93c5fd" />
+                            </marker>
+                        </defs>
+                        <!-- Vector starting from center (100,100), pointing to +60 degrees -->
+                        <!-- x = 100 + r*cos(60), y = 100 + r*sin(60). Let r = 40 -->
+                        <!-- cos(60) = 0.5, sin(60) = ~0.866 -->
+                        <line x1="100" y1="100" x2="120" y2="134.6" stroke="#93c5fd" stroke-width="2" marker-end="url(#arrowhead-main)" class="opacity-60"/>
+                        <text x="125" y="145" class="text-[8px] fill-[#93c5fd] font-mono opacity-80">Vetor VE (~ +60°)</text>
+                    </svg>
+
+                    <!-- Axes and Labels Container (Populated by JS) -->
+                    <div id="axes-layer" class="absolute inset-0 w-full h-full"></div>
+                    <div id="buttons-layer" class="absolute inset-0 w-full h-full"></div>
+                </div>
+            </div>
+
+            <!-- Controls / Legend -->
+            <div class="bg-ecg-card rounded-xl border border-ecg-grid p-4 shadow-lg">
+                <p class="text-sm text-ecg-text mb-3">Selecione uma derivação para visualizar seu morfótipo correspondente no plano frontal.</p>
+                <div class="flex flex-wrap gap-2 justify-center" id="lead-toggles">
+                    <!-- Buttons generated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Waveform and Information -->
+        <section class="lg:w-1/2 flex flex-col gap-4">
+            
+            <!-- Waveform Display Area -->
+            <div class="bg-ecg-card rounded-xl border border-ecg-grid p-0 flex flex-col relative aspect-video shadow-lg overflow-hidden ecg-grid">
+                
+                <!-- Lead Badge Top Right -->
+                <div class="absolute top-4 right-4 z-20 bg-[#0f172a] border border-[#38bdf8] text-[#38bdf8] px-3 py-1 rounded-full text-sm font-mono font-bold shadow-[0_0_10px_rgba(56,189,248,0.2)]" id="current-lead-badge">
+                    D2
+                </div>
+
+                <!-- Isoelectric Line Indicator -->
+                <div class="absolute left-4 top-[50%] -translate-y-1/2 z-10">
+                    <span class="text-xs font-mono text-ecg-isoelectric border-b border-ecg-isoelectric pb-1">Linha Isoelétrica</span>
+                </div>
+
+                <!-- SVG Canvas for the Waveform -->
+                <div class="absolute inset-0 w-full h-full flex items-center justify-center p-4">
+                    <svg id="waveform-svg" class="w-full h-full" viewBox="0 0 500 200" preserveAspectRatio="xMidYMid meet">
+                        <!-- Center horizontal line -->
+                        <line x1="0" y1="100" x2="500" y2="100" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4" />
+                        
+                        <!-- Dynamic Wave Path will be injected here -->
+                        <path id="wave-path" d="" fill="none" stroke="#e2e8f0" stroke-width="2.5" class="draw-wave" />
+                        
+                        <!-- Labels for waves (P, Q, R, S, T) injected here -->
+                        <g id="wave-labels" class="font-mono text-xs fill-[#38bdf8]"></g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Details Panel -->
+            <div class="bg-ecg-card rounded-xl border border-ecg-grid p-5 shadow-lg flex-grow flex flex-col" id="info-panel">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-ecg-grid pb-4 mb-4">
+                    <div>
+                        <h3 class="text-[10px] text-ecg-isoelectric uppercase tracking-widest font-bold mb-1">Derivação & Ângulo</h3>
+                        <p id="info-title" class="font-bold text-ecg-highlight font-mono text-sm sm:text-base">D2 (+60°) – Parede Inferior</p>
+                    </div>
+                    <div>
+                        <h3 class="text-[10px] text-ecg-isoelectric uppercase tracking-widest font-bold mb-1">Morfologia QRS</h3>
+                        <p id="info-morphology" class="font-bold text-ecg-text font-mono text-sm">qR (Onda R dominante)</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[10px] text-ecg-isoelectric uppercase tracking-widest font-bold mb-2">Mecanismo Eletrofisiológico</h3>
+                    <p id="info-mechanism" class="text-sm text-gray-300 leading-relaxed fade-in">
+                        O vetor principal de despolarização do ventrículo esquerdo (aprox. +60°) aponta quase diretamente para a lente positiva de D2. Isso resulta em uma grande deflexão positiva (onda R alta). A pequena onda q inicial representa a despolarização septal da esquerda para a direita, afastando-se ligeiramente de D2.
+                    </p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        // Data definition for all 6 limb leads in the frontal plane
+        const leadData = {
+            'D1': {
+                id: 'D1',
+                angle: 0,
+                color: '#38bdf8', // sky
+                wall: 'Lateral Alta',
+                morphology: 'qR ou R',
+                mechanism: 'O vetor de despolarização ventricular (que se dirige para baixo e para a esquerda, aprox. +60°) projeta-se positivamente sobre o eixo de D1 (0°). Como o ângulo entre o vetor (+60°) e D1 (0°) é agudo, gera-se uma onda R predominantemente positiva. Pode haver uma pequena onda q septal.',
+                // SVG Path mapping (scale 0 to 500 x, 0 to 200 y, center is y=100)
+                // P wave, PR segment, Q, R, S, ST segment, T wave
+                // Simple representation: qR
+                wavePath: 'M 50 100 C 65 100, 75 90, 85 100 L 120 100 L 130 110 L 150 40 L 160 100 L 190 100 C 220 100, 240 85, 270 100 L 450 100',
+                labels: [
+                    {text: 'q', x: 125, y: 122},
+                    {text: 'R', x: 145, y: 30}
+                ]
+            },
+            'D2': {
+                id: 'D2',
+                angle: 60,
+                color: '#38bdf8',
+                wall: 'Inferior',
+                morphology: 'qR (Onda R dominante)',
+                mechanism: 'D2 "olha" o coração a partir de +60°. O vetor principal de despolarização do VE geralmente aponta na mesma direção (aprox. +60°). Como o vetor vai diretamente de encontro ao polo positivo de D2, esta derivação registra a maior onda R do plano frontal em um coração normal. A pequena onda q reflete a despolarização septal.',
+                // Large R wave
+                wavePath: 'M 50 100 C 65 100, 75 90, 85 100 L 120 100 L 125 105 L 150 20 L 165 105 L 190 100 C 220 100, 240 85, 270 100 L 450 100',
+                labels: [
+                    {text: 'q', x: 120, y: 118},
+                    {text: 'R', x: 145, y: 12},
+                    {text: 's', x: 165, y: 118}
+                ]
+            },
+            'D3': {
+                id: 'D3',
+                angle: 120,
+                color: '#38bdf8',
+                wall: 'Inferior',
+                morphology: 'qR, R ou RS (Variável)',
+                mechanism: 'Posicionada a +120°. O vetor principal (+60°) ainda se projeta no hemicampo positivo de D3, mas com um ângulo de 60° de diferença. Isso resulta em uma onda R positiva, porém frequentemente menor que a de D2. Dependendo da posição anatômica do coração, pode haver uma onda S significativa.',
+                // Moderate R, slight S
+                wavePath: 'M 50 100 C 65 100, 75 92, 85 100 L 120 100 L 140 50 L 155 120 L 170 100 L 190 100 C 220 100, 240 90, 270 100 L 450 100',
+                labels: [
+                    {text: 'R', x: 135, y: 40},
+                    {text: 'S', x: 155, y: 135}
+                ]
+            },
+            'aVR': {
+                id: 'aVR',
+                angle: -150, // or 210
+                color: '#ef4444', // red to indicate negative
+                wall: 'Cavidade / Base do Coração',
+                morphology: 'QS ou rS (Tudo negativo)',
+                mechanism: 'aVR (+ no ombro direito, -150°) "olha" para a cavidade ventricular direita e a base do coração. Como o vetor de despolarização inteiro (átrios e ventrículos) foge desta derivação em direção à ponta do coração (baixo e esquerda), TODAS as deflexões normais (onda P, complexo QRS, onda T) são negativas. O complexo QRS é tipicamente um QS profundo.',
+                // Deep negative wave
+                wavePath: 'M 50 100 C 65 100, 75 108, 85 100 L 120 100 L 130 90 L 150 170 L 170 100 L 190 100 C 220 100, 240 115, 270 100 L 450 100',
+                labels: [
+                    {text: 'r', x: 125, y: 85},
+                    {text: 'S', x: 145, y: 185}
+                ]
+            },
+            'aVL': {
+                id: 'aVL',
+                angle: -30,
+                color: '#38bdf8',
+                wall: 'Lateral Alta',
+                morphology: 'RS ou qR (Isodifásica a ligeiramente positiva)',
+                mechanism: 'Posicionada no ombro esquerdo (-30°). O vetor principal (+60°) está quase perpendicular a aVL (diferença de 90°). Portanto, o QRS em aVL é frequentemente isodifásico (onda R e onda S de tamanhos semelhantes). Se o eixo for mais horizontal, a onda R aumenta; se mais vertical, a onda S aprofunda.',
+                // Isophasic RS
+                wavePath: 'M 50 100 C 65 100, 75 95, 85 100 L 120 100 L 135 70 L 150 130 L 165 100 L 190 100 C 220 100, 240 95, 270 100 L 450 100',
+                labels: [
+                    {text: 'R', x: 130, y: 60},
+                    {text: 'S', x: 145, y: 145}
+                ]
+            },
+            'aVF': {
+                id: 'aVF',
+                angle: 90,
+                color: '#38bdf8',
+                wall: 'Inferior',
+                morphology: 'qR ou R',
+                mechanism: 'Lente localizada no polo inferior (pé esquerdo, +90°). O vetor médio (+60°) aponta para o seu hemicampo positivo. Sendo assim, registra um complexo QRS predominantemente positivo, semelhante a D2 e D3, completando a visão da parede inferior do coração.',
+                // Good R wave, similar to D2 but slightly smaller
+                wavePath: 'M 50 100 C 65 100, 75 92, 85 100 L 120 100 L 125 105 L 145 35 L 160 105 L 180 100 L 190 100 C 220 100, 240 88, 270 100 L 450 100',
+                labels: [
+                    {text: 'q', x: 120, y: 118},
+                    {text: 'R', x: 140, y: 25},
+                    {text: 's', x: 160, y: 118}
+                ]
+            }
+        };
+
+        let currentLead = 'D2';
+
+        function initHexaxialDiagram() {
+            const axesLayer = document.getElementById('axes-layer');
+            const buttonsLayer = document.getElementById('buttons-layer');
+            const toggleContainer = document.getElementById('lead-toggles');
+            
+            const radius = 42; // Percentage from center
+
+            Object.values(leadData).forEach(lead => {
+                // 1. Draw Axes Lines (Dotted lines across the circle)
+                // Only draw for the positive side to avoid clutter, or draw full diameter for unipolar?
+                // Hexaxial usually shows full lines crossing the center.
+                // Convert angle to radians. Note: SVG/CSS standard math has 0 at 3 o'clock, positive clockwise.
+                // Medical ECG hexaxial also has 0 at 3 o'clock (D1), positive clockwise (D2 is +60, aVF is +90).
+                
+                const rad = lead.angle * (Math.PI / 180);
+                
+                // Calculate end points for the axis line (crossing center)
+                const x1 = 50 - Math.cos(rad) * radius;
+                const y1 = 50 - Math.sin(rad) * radius;
+                const x2 = 50 + Math.cos(rad) * radius;
+                const y2 = 50 + Math.sin(rad) * radius;
+
+                // Create SVG line for axis
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                svg.setAttribute("class", "absolute inset-0 w-full h-full pointer-events-none opacity-20");
+                svg.setAttribute("viewBox", "0 0 100 100");
+                
+                const line = document.createElementNS(svgNS, "line");
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("stroke", "#64748b");
+                line.setAttribute("stroke-width", "0.5");
+                line.setAttribute("stroke-dasharray", "1,1");
+                
+                svg.appendChild(line);
+                axesLayer.appendChild(svg);
+
+                // 2. Position the interactive buttons on the circle circumference
+                // Positive pole
+                const btnX = 50 + Math.cos(rad) * (radius + 8); // Slightly outside the circle
+                const btnY = 50 + Math.sin(rad) * (radius + 8);
+
+                const btn = document.createElement('button');
+                btn.className = `absolute w-8 h-8 -ml-4 -mt-4 rounded-full border border-ecg-grid bg-[#0f172a] text-xs font-mono font-bold flex items-center justify-center cursor-pointer lead-button hover:border-ecg-highlight hover:text-ecg-highlight z-20 transition-colors shadow-md ${lead.id === currentLead ? 'active' : 'text-ecg-isoelectric'}`;
+                btn.style.left = `${btnX}%`;
+                btn.style.top = `${btnY}%`;
+                btn.innerText = lead.id;
+                btn.onclick = () => selectLead(lead.id);
+                btn.id = `hex-btn-${lead.id}`;
+                
+                buttonsLayer.appendChild(btn);
+
+                // Draw solid arrow for the positive half of the axis
+                const axisArrowSvg = document.createElementNS(svgNS, "svg");
+                axisArrowSvg.setAttribute("class", "absolute inset-0 w-full h-full pointer-events-none z-0");
+                axisArrowSvg.setAttribute("viewBox", "0 0 100 100");
+                
+                const arrowLine = document.createElementNS(svgNS, "line");
+                arrowLine.setAttribute("x1", "50");
+                arrowLine.setAttribute("y1", "50");
+                // Stop slightly before the button
+                arrowLine.setAttribute("x2", 50 + Math.cos(rad) * (radius));
+                arrowLine.setAttribute("y2", 50 + Math.sin(rad) * (radius));
+                
+                // Dimmer line for the lead axis
+                arrowLine.setAttribute("stroke", lead.id === 'aVR' ? '#ef4444' : '#64748b');
+                arrowLine.setAttribute("stroke-width", "0.5");
+                arrowLine.setAttribute("opacity", "0.4");
+                
+                axisArrowSvg.appendChild(arrowLine);
+                axesLayer.appendChild(axisArrowSvg);
+
+
+                // 3. Create Bottom Toggles
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = `px-4 py-2 rounded-lg border border-ecg-grid bg-ecg-card text-sm font-mono font-bold cursor-pointer hover:border-ecg-highlight hover:text-ecg-highlight transition-all lead-button ${lead.id === currentLead ? 'active' : 'text-ecg-isoelectric'}`;
+                toggleBtn.innerText = lead.id;
+                toggleBtn.onclick = () => selectLead(lead.id);
+                toggleBtn.id = `toggle-btn-${lead.id}`;
+                toggleContainer.appendChild(toggleBtn);
+            });
+        }
+
+        function selectLead(leadId) {
+            if (currentLead === leadId) return;
+            
+            const data = leadData[leadId];
+            currentLead = leadId;
+
+            // Update Buttons State
+            document.querySelectorAll('.lead-button').forEach(btn => btn.classList.remove('active', 'text-ecg-highlight'));
+            document.querySelectorAll('.lead-button:not(.active)').forEach(btn => btn.classList.add('text-ecg-isoelectric'));
+            
+            const hexBtn = document.getElementById(`hex-btn-${leadId}`);
+            const toggleBtn = document.getElementById(`toggle-btn-${leadId}`);
+            
+            if (hexBtn) {
+                hexBtn.classList.add('active');
+                hexBtn.classList.remove('text-ecg-isoelectric');
+            }
+            if (toggleBtn) {
+                toggleBtn.classList.add('active');
+                toggleBtn.classList.remove('text-ecg-isoelectric');
+            }
+
+            // Update Badge
+            document.getElementById('current-lead-badge').innerText = data.id;
+
+            // Update Text Info
+            const titleEl = document.getElementById('info-title');
+            const morphEl = document.getElementById('info-morphology');
+            const mechEl = document.getElementById('info-mechanism');
+
+            // Add fade-in effect to text
+            [titleEl, morphEl, mechEl].forEach(el => {
+                el.classList.remove('fade-in');
+                void el.offsetWidth; // trigger reflow
+                el.classList.add('fade-in');
+            });
+
+            titleEl.innerText = `${data.id} (${data.angle > 0 ? '+' : ''}${data.angle}°) – Parede ${data.wall}`;
+            morphEl.innerText = data.morphology;
+            mechEl.innerText = data.mechanism;
+
+            // Update Waveform
+            updateWaveform(data);
+        }
+
+        function updateWaveform(data) {
+            const pathEl = document.getElementById('wave-path');
+            const labelsGroup = document.getElementById('wave-labels');
+            
+            // Retrigger animation
+            pathEl.classList.remove('draw-wave');
+            void pathEl.offsetWidth; // trigger reflow
+            
+            pathEl.setAttribute('d', data.wavePath);
+            pathEl.classList.add('draw-wave');
+
+            // Clear old labels
+            labelsGroup.innerHTML = '';
+
+            // Add new labels
+            data.labels.forEach(label => {
+                const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                textEl.setAttribute('x', label.x);
+                textEl.setAttribute('y', label.y);
+                textEl.setAttribute('text-anchor', 'middle');
+                // Apply a slight fade in to labels
+                textEl.setAttribute('class', 'fade-in');
+                textEl.setAttribute('style', `animation-delay: 1s; opacity: 0; animation-fill-mode: forwards;`); // Delay label appearance until wave is mostly drawn
+                textEl.textContent = label.text;
+                labelsGroup.appendChild(textEl);
+            });
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            initHexaxialDiagram();
+            // Trigger initial render for default lead (D2)
+            updateWaveform(leadData['D2']);
+        };
+    </script>
+</body>
+</html>
